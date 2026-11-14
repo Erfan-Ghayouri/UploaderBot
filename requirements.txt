@@ -1,0 +1,6 @@
+kurigram[fast]     # kuricrypt and uvloop for better performance
+dotenv             # for loading environment variables
+# for database management
+tortoise-orm       
+tortoise-orm[asyncpg] 
+tortoise-orm[asyncmy]
