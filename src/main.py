@@ -1,50 +1,52 @@
-from pyrogram import Client, idle
+import asyncio
+
+from pyrogram import idle, Client
 from tortoise import Tortoise
 
 from config import Config
-from database.database import init_database
-from handlers import register_handlers
+from database.database import init_database, DBChannel
+from handlers.start_handler import register_start_handler
+
 
 class UploaderBot(Client):
-    """
-    This is the main class of the UploaderBot for initializing and running the bot.
-    """
-    __version__ = "0.1"
 
-    def __init__(self, api_id, api_hash, bot_token, admin_ids):
-        self.admin_ids = admin_ids
-        super().__init__("UploaderBot", api_id, api_hash, bot_token=bot_token)
+    def __init__(self):
+        super().__init__(
+            "UploaderBot",
+            api_id=Config.API_ID,
+            api_hash=Config.API_HASH,
+            bot_token=Config.BOT_TOKEN
+        )
 
-        register_handlers(self)
+        self.db_channel = DBChannel(self)
+
+        register_start_handler(self)
 
 
-    async def run_bot(self):
-        await init_database()
-        await Tortoise.generate_schemas()
+async def main():
 
-        await self.start()
+    Config.validate()
+
+    # Initialize database BEFORE starting the bot
+    await init_database()
+
+    bot = UploaderBot()
+    started = False
+
+    try:
+        await bot.start()
+        started = True
+
+        print("🚀 UploaderBot is running!")
+
         await idle()
-        await self.stop()
+
+    finally:
+        if started:
+            await bot.stop()
 
         await Tortoise.close_connections()
 
 
-    def start_bot(self):
-        self.run(self.run_bot())
-
-
-    def __str__(self):
-        return f"The UploaderBot's status is: {super().is_connected}"
-
-
-if __name__ == '__main__':
-    Config.validate()
-
-    bot = UploaderBot(
-        api_id=Config.API_ID,
-        api_hash=Config.API_HASH,
-        bot_token=Config.BOT_TOKEN,
-        admin_ids=Config.ADMIN_IDS
-    )
-
-    bot.start_bot()
+if __name__ == "__main__":
+    asyncio.run(main())

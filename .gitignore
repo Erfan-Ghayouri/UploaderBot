@@ -3,4 +3,6 @@
 __pycache__/
 *.session
 *.session-journal
-db.sqlite3
+*.db
+*.sqlite3-*
+*.sqlite3
