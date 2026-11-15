@@ -22,13 +22,13 @@ from handlers.state import (
     upload_sessions,
     channel_states,
 )
+from utils.admins import admin_filter
 
 
 logger = logging.getLogger(__name__)
 
 
 def register_sponsor_handler(app: Client):
-    admin_filter = filters.user(Config.ADMIN_IDS)
 
     sponsor_forward_filter = make_state_filter("sponsor", "forward")
     sponsor_details_filter = make_state_filter("sponsor", "details")

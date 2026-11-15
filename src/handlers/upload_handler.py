@@ -22,6 +22,7 @@ from handlers.state import (
     upload_sessions,
 )
 from utils.base62 import encode_base62
+from utils.admins import admin_filter
 
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,6 @@ ADMIN_FILE_DELETE_SECONDS = 60
 
 
 def register_upload_handler(app: Client):
-    admin_filter = filters.user(Config.ADMIN_IDS)
 
     # --------------------------------------------------------
     # شروع آپلود

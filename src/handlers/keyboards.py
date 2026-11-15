@@ -14,6 +14,7 @@ ADMIN_MAIN_KEYBOARD = ReplyKeyboardMarkup(
         [KeyboardButton("🔒 مدیریت کانال‌های قفل‌شده")],
         [KeyboardButton("👁️ مدیریت شرط سین/ری‌اکشن")],
         [KeyboardButton("📣 پیام همگانی")],
+        [KeyboardButton("👥 مدیریت ادمین‌ها")],
     ],
     resize_keyboard=True,
 )
@@ -32,6 +33,16 @@ VIEW_REACTION_MENU_KEYBOARD = ReplyKeyboardMarkup(
         [KeyboardButton("➕ افزودن/جایگزینی کانال")],
         [KeyboardButton("🔄 فعال/غیرفعال کردن شرط")],
         [KeyboardButton("🗑 حذف کانال ریاکشن")],
+        [KeyboardButton("↩️ پنل اصلی")],
+    ],
+    resize_keyboard=True,
+)
+
+ADMIN_MANAGEMENT_KEYBOARD = ReplyKeyboardMarkup(
+    [
+        [KeyboardButton("📋 لیست ادمین‌ها")],
+        [KeyboardButton("➕ افزودن ادمین"), KeyboardButton("🗑 حذف ادمین")],
+        [KeyboardButton("📜 تاریخچه تغییرات")],
         [KeyboardButton("↩️ پنل اصلی")],
     ],
     resize_keyboard=True,
@@ -70,6 +81,7 @@ RESERVED_BUTTONS = {
     "🔒 مدیریت کانال‌های قفل‌شده",
     "👁️ مدیریت شرط سین/ری‌اکشن",
     "📣 پیام همگانی",
+    "👥 مدیریت ادمین‌ها",
     "➕ افزودن کانال قفل‌شده",
     "📋 لیست کانال‌های قفل‌شده",
     "➕ افزودن/جایگزینی کانال",
@@ -81,4 +93,8 @@ RESERVED_BUTTONS = {
     "❌ لغو عملیات",
     "🗑 حذف خودکار: روشن",
     "🗑 حذف خودکار: خاموش",
+    "📋 لیست ادمین‌ها",
+    "➕ افزودن ادمین",
+    "🗑 حذف ادمین",
+    "📜 تاریخچه تغییرات",
 }

@@ -21,6 +21,9 @@ broadcast_states: dict[int, bool] = {}
 # نشست‌های شرط سین/ری‌اکشن کاربران: {user_id: {"payload": ..., "ready_at": ...}}
 view_gate_sessions: dict[int, dict] = {}
 
+# وضعیت مدیریت ادمین‌ها: {admin_id: {"kind": "add"|"remove"}}
+admin_management_states: dict[int, dict] = {}
+
 
 def make_state_filter(kind: str, step: str):
     """فیلتری که فقط پیام‌های ادمینِ در یک مرحله مشخص را رد می‌کند."""
@@ -38,3 +41,22 @@ def make_state_filter(kind: str, step: str):
         )
 
     return filters.create(state_filter)
+
+
+def admin_filter():
+    """
+    فیلتر پویا برای ادمین‌ها: مالک‌های .env (ADMIN_IDS) همیشه ادمین هستند
+    و ادمین‌های ذخیره‌شده در دیتابیس (حذف‌نشده) هم مجازند.
+    """
+
+    async def predicate(_, __, message: Message):
+        if not message.from_user:
+            return False
+
+        # Лени import برای جلوگیری از imported-cycle
+        from database.database import DBChannel
+
+        db = DBChannel.__new__(DBChannel)
+        return await db.is_admin(message.from_user.id)
+
+    return filters.create(predicate)

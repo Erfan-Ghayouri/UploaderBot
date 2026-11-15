@@ -13,6 +13,7 @@ from handlers.keyboards import (
     RESERVED_BUTTONS,
 )
 from handlers.state import broadcast_states, channel_states, upload_sessions
+from utils.admins import admin_filter, is_admin
 
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,6 @@ BROADCAST_DELAY_SECONDS = 0.1
 
 
 def register_broadcast_handler(app: Client):
-    admin_filter = filters.user(Config.ADMIN_IDS)
 
     async def broadcast_pending_filter(_, __, message: Message):
         return bool(
@@ -99,7 +99,7 @@ def register_broadcast_handler(app: Client):
 
         for user in users:
             # به خود ادمین‌ها پیام همگانی نفرست
-            if user.user_id in Config.ADMIN_IDS:
+            if await is_admin(user.user_id):
                 skipped += 1
                 continue
 

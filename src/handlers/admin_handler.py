@@ -11,13 +11,13 @@ from handlers.keyboards import (
     VIEW_REACTION_MENU_KEYBOARD,
 )
 from handlers.state import broadcast_states, channel_states
+from utils.admins import admin_filter
 
 
 logger = logging.getLogger(__name__)
 
 
 def register_admin_handler(app: Client):
-    admin_filter = filters.user(Config.ADMIN_IDS)
 
     # --------------------------------------------------------
     # استارت ادمین

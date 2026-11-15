@@ -17,13 +17,13 @@ from handlers.state import (
     make_state_filter,
     upload_sessions,
 )
+from utils.admins import admin_filter
 
 
 logger = logging.getLogger(__name__)
 
 
 def register_view_channel_handler(app: Client):
-    admin_filter = filters.user(Config.ADMIN_IDS)
 
     view_forward_filter = make_state_filter("view", "forward")
     view_details_filter = make_state_filter("view", "details")
