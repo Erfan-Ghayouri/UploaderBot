@@ -1,36 +1,52 @@
-from pyrogram import Client, filters
+import asyncio
+
+from pyrogram import idle, Client
+from tortoise import Tortoise
+
 from config import Config
-from handlers import register_handlers
+from database.database import init_database, DBChannel
+from handlers.start_handler import register_start_handler
+
 
 class UploaderBot(Client):
-    """
-    This is the main class of the UploaderBot for initializing and running the bot.
-    """
-    __version__ = "0.1"
 
-    def __init__(self, api_id, api_hash, bot_token, admin_ids):
-        self.admin_ids = admin_ids
-        super().__init__("UploaderBot", api_id, api_hash, bot_token=bot_token)
+    def __init__(self):
+        super().__init__(
+            "UploaderBot",
+            api_id=Config.API_ID,
+            api_hash=Config.API_HASH,
+            bot_token=Config.BOT_TOKEN
+        )
 
-        register_handlers(self)
+        self.db_channel = DBChannel(self)
 
-
-    def start_bot(self):
-        self.run()
+        register_start_handler(self)
 
 
-    def __str__(self):
-        return f"The UploaderBot's status is: {super().is_connected}"
+async def main():
 
-
-if __name__ == '__main__':
     Config.validate()
 
-    bot = UploaderBot(
-        api_id=Config.API_ID,
-        api_hash=Config.API_HASH,
-        bot_token=Config.BOT_TOKEN,
-        admin_ids=Config.ADMIN_IDS
-    )
+    # Initialize database BEFORE starting the bot
+    await init_database()
 
-    bot.start_bot()
+    bot = UploaderBot()
+    started = False
+
+    try:
+        await bot.start()
+        started = True
+
+        print("🚀 UploaderBot is running!")
+
+        await idle()
+
+    finally:
+        if started:
+            await bot.stop()
+
+        await Tortoise.close_connections()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
