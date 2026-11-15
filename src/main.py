@@ -1,5 +1,8 @@
-from pyrogram import Client, filters
+from pyrogram import Client, idle
+from tortoise import Tortoise
+
 from config import Config
+from database.database import init_database
 from handlers import register_handlers
 
 class UploaderBot(Client):
@@ -15,8 +18,19 @@ class UploaderBot(Client):
         register_handlers(self)
 
 
+    async def run_bot(self):
+        await init_database()
+        await Tortoise.generate_schemas()
+
+        await self.start()
+        await idle()
+        await self.stop()
+
+        await Tortoise.close_connections()
+
+
     def start_bot(self):
-        self.run()
+        self.run(self.run_bot())
 
 
     def __str__(self):

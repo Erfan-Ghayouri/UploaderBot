@@ -15,6 +15,10 @@ class Config:
     ADMIN_IDS = os.getenv("ADMIN_IDS")
     DB_CHANNEL_ID = os.getenv("DB_CHANNEL_ID")
 
+    # Optional
+    AUTO_DELETE_SECONDS = os.getenv("AUTO_DELETE_SECONDS", "60")
+    VIEW_CHANNEL_ID = os.getenv("VIEW_CHANNEL_ID", "")
+
     DATABASE = os.getenv("DATABASE", "sqlite").lower()
     DATABASE_URL = os.getenv("DATABASE_URL", "")
 
@@ -83,3 +87,16 @@ class Config:
                 "must contain valid integers."
             )
             raise
+
+        # Optional settings
+        try:
+            Config.AUTO_DELETE_SECONDS = max(5, int(Config.AUTO_DELETE_SECONDS))
+
+        except ValueError:
+            Config.AUTO_DELETE_SECONDS = 60
+
+        if Config.VIEW_CHANNEL_ID.strip().lstrip("-").isdigit():
+            Config.VIEW_CHANNEL_ID = int(Config.VIEW_CHANNEL_ID)
+
+        else:
+            Config.VIEW_CHANNEL_ID = None
