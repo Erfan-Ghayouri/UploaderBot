@@ -5,7 +5,7 @@ from tortoise import Tortoise
 
 from config import Config
 from database.database import init_database, DBChannel
-from handlers.start_handler import register_start_handler
+from handlers import register_handlers
 
 
 class UploaderBot(Client):
@@ -20,7 +20,7 @@ class UploaderBot(Client):
 
         self.db_channel = DBChannel(self)
 
-        register_start_handler(self)
+        register_handlers(self)
 
 
 async def main():

@@ -1,0 +1,40 @@
+"""
+وضعیت‌های موقت (in-memory) که بین هندلرها به اشتراک گذاشته می‌شوند.
+"""
+
+from pyrogram import filters
+from pyrogram.types import Message
+
+
+# فایل‌های آپلود در جریان هر ادمین: {admin_id: [file_message_id, ...]}
+upload_sessions: dict[int, list[int]] = {}
+
+# وضعیت حذف خودکار هر آپلود در جریان: {admin_id: bool}
+auto_delete_enabled: dict[int, bool] = {}
+
+# وضعیت مراحل افزودن کانال: {admin_id: {"kind": ..., "step": ..., ...}}
+channel_states: dict[int, dict] = {}
+
+# ادمین‌های در انتظار دریافت محتوای پیام همگانی: {admin_id: True}
+broadcast_states: dict[int, bool] = {}
+
+# نشست‌های شرط سین/ری‌اکشن کاربران: {user_id: {"payload": ..., "ready_at": ...}}
+view_gate_sessions: dict[int, dict] = {}
+
+
+def make_state_filter(kind: str, step: str):
+    """فیلتری که فقط پیام‌های ادمینِ در یک مرحله مشخص را رد می‌کند."""
+
+    async def state_filter(_, __, message: Message):
+        if not message.from_user:
+            return False
+
+        state = channel_states.get(message.from_user.id)
+
+        return bool(
+            state
+            and state.get("kind") == kind
+            and state.get("step") == step
+        )
+
+    return filters.create(state_filter)

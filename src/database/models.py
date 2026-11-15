@@ -22,18 +22,6 @@ class User(models.Model):
 
 
 # ============================================================
-# Settings (key/value)
-# ============================================================
-
-class Setting(models.Model):
-    key = fields.CharField(max_length=64, pk=True)
-    value = fields.CharField(max_length=512, null=True)
-
-    class Meta:
-        table = "settings"
-
-
-# ============================================================
 # Locked (sponsor) channels — users must join before receiving files
 # ============================================================
 

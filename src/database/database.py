@@ -370,31 +370,3 @@ class DBChannel:
         return parse_manifest_text(
             manifest_text
         )
-
-    # --------------------------------------------------------
-    # Get Manifest File IDs
-    # --------------------------------------------------------
-
-    async def get_manifest_files(
-        self,
-        manifest_id: int
-    ) -> list[int]:
-        """
-        Return only file message IDs.
-
-        Kept for compatibility with handlers that
-        only need the list of file IDs.
-        """
-
-        manifest_data = await self.get_manifest(
-            manifest_id
-        )
-
-        file_ids = manifest_data["file_ids"]
-
-        if not file_ids:
-            raise ValueError(
-                f"Manifest {manifest_id} contains no files."
-            )
-
-        return file_ids
