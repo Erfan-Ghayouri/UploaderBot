@@ -1,7 +1,6 @@
 from tortoise import Tortoise
 
 from config import Config
-from database.models import Setting, SponsorChannel
 
 from pyrogram import Client
 from pyrogram.types import Message

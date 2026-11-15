@@ -174,81 +174,12 @@ async def delete_messages_after(
 
 # ============================================================
 # فرمت منیفست
+#
+# ساخت و خواندن منیفست (سه خط اول: هدر + وضعیت شرط ویو چنل +
+# وضعیت حذف خودکار؛ خطوط بعدی: آیدی پیام فایل‌ها) در
+# database/database.py انجام می‌شود و از طریق client.db_channel
+# در دسترس است.
 # ============================================================
-
-MANIFEST_HEADER = "UPLOADERBOT_MANIFEST_V1"
-
-
-def build_manifest_text(
-    file_ids: list[int],
-    view_gate_enabled: bool,
-    auto_delete_enabled: bool,
-) -> str:
-    """
-    ساخت منیفست سه‌خطی:
-
-    خط اول: نسخه منیفست
-    خط دوم: وضعیت شرط ویو چنل
-    خط سوم: وضعیت حذف خودکار
-    خطوط بعدی: آیدی پیام‌های فایل
-    """
-
-    lines = [
-        MANIFEST_HEADER,
-        f"VIEW_GATE={1 if view_gate_enabled else 0}",
-        f"AUTO_DELETE={1 if auto_delete_enabled else 0}",
-    ]
-
-    lines.extend(str(file_id) for file_id in file_ids)
-
-    return "\n".join(lines)
-
-
-def parse_manifest_text(text: str) -> dict:
-    """خواندن منیفست جدید و پشتیبانی از منیفست‌های قدیمی."""
-
-    lines = [
-        line.strip()
-        for line in text.splitlines()
-        if line.strip()
-    ]
-
-    # پشتیبانی از منیفست‌های قدیمی
-    if not lines or lines[0] != MANIFEST_HEADER:
-        old_file_ids = []
-
-        for line in lines:
-            if re.fullmatch(r"\d+", line):
-                old_file_ids.append(int(line))
-
-        return {
-            "view_gate": False,
-            "auto_delete": False,
-            "file_ids": old_file_ids,
-        }
-
-    if len(lines) < 3:
-        return {
-            "view_gate": False,
-            "auto_delete": False,
-            "file_ids": [],
-        }
-
-    view_gate_enabled = lines[1] == "VIEW_GATE=1"
-    auto_delete_enabled = lines[2] == "AUTO_DELETE=1"
-
-    file_ids = []
-
-    for line in lines[3:]:
-        if re.fullmatch(r"\d+", line):
-            file_ids.append(int(line))
-
-    return {
-        "view_gate": view_gate_enabled,
-        "auto_delete": auto_delete_enabled,
-        "file_ids": file_ids,
-    }
-
 
 # ============================================================
 # ثبت هندلرها

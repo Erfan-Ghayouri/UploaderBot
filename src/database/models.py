@@ -22,7 +22,7 @@ class User(models.Model):
 
 
 # ============================================================
-# Sponsor Channels
+# Settings (key/value)
 # ============================================================
 
 class Setting(models.Model):
@@ -33,11 +33,35 @@ class Setting(models.Model):
         table = "settings"
 
 
+# ============================================================
+# Locked (sponsor) channels — users must join before receiving files
+# ============================================================
+
 class SponsorChannel(models.Model):
-    id = fields.IntField(pk=True)
-    channel_name = fields.CharField(max_length=256)
-    channel_username = fields.CharField(max_length=64, null=True)
+    channel_id = fields.BigIntField(pk=True)
+    name = fields.CharField(max_length=256)
     invite_link = fields.CharField(max_length=256)
 
     class Meta:
         table = "sponsor_channels"
+
+    def __str__(self):
+        return self.name
+
+
+# ============================================================
+# View/reaction gate channel — single record with fixed id=1
+# ============================================================
+
+class ViewReactionChannel(models.Model):
+    id = fields.IntField(pk=True)
+    channel_id = fields.BigIntField(null=True)
+    name = fields.CharField(max_length=256, null=True)
+    invite_link = fields.CharField(max_length=256, null=True)
+    enabled = fields.BooleanField(default=False)
+
+    class Meta:
+        table = "view_reaction_channels"
+
+    def __str__(self):
+        return self.name or str(self.channel_id)

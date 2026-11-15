@@ -17,14 +17,6 @@ from database.models import SponsorChannel
 logger = logging.getLogger(__name__)
 
 
-import logging
-
-from pyrogram.enums import ChatMemberStatus
-from pyrogram.errors import UserNotParticipant, RPCError
-
-from database.models import SponsorChannel
-
-
 async def get_unjoined_channels(client, user_id: int):
     """
     Return SponsorChannel objects for channels
@@ -133,7 +125,7 @@ def require_subscription(handler):
         payload = command[1]
 
         try:
-            unjoined, errors = await get_unjoined_channels(
+            unjoined = await get_unjoined_channels(
                 client,
                 message.from_user.id
             )
@@ -143,14 +135,6 @@ def require_subscription(handler):
 
             await message.reply_text(
                 "❌ در حال حاضر امکان بررسی عضویت وجود ندارد."
-            )
-            return
-
-        # Fail closed if membership could not be verified
-        if errors:
-            await message.reply_text(
-                "⚠️ بررسی عضویت در بعضی کانال‌ها ممکن نشد.\n"
-                "لطفاً کمی بعد دوباره تلاش کن."
             )
             return
 
