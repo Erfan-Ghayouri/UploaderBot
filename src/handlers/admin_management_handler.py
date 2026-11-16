@@ -7,7 +7,6 @@ from pyrogram.types import (
     Message,
 )
 
-from config import Config
 from handlers.helpers import get_forwarded_channel, get_forwarded_user
 from handlers.keyboards import (
     ADMIN_MANAGEMENT_KEYBOARD,
@@ -19,6 +18,9 @@ from utils.admins import (
     get_active_admin,
     get_active_admins,
     get_admin_logs,
+    get_owner_ids,
+    is_owner,
+    owner_filter,
     remove_admin,
     resolve_admin_name,
 )
@@ -28,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 # کل مدیریت ادمین‌ها فقط برای مالک‌های .env است؛
 # ادمین‌های اضافه‌شده به این منو دسترسی ندارند.
-owner_filter = filters.user(Config.ADMIN_IDS)
+# فیلتر پویا است و در زمان اجرا ارزیابی می‌شود (بعد از validate).
 
 
 def register_admin_management_handler(app: Client):
@@ -67,7 +69,7 @@ def register_admin_management_handler(app: Client):
 
         # مالک‌های .env
         lines.append("👑 مالکان ربات (.env):")
-        for owner_id in Config.ADMIN_IDS:
+        for owner_id in get_owner_ids():
             name = await resolve_admin_name(client, owner_id)
             lines.append(f"• {owner_id} — {name}")
 
@@ -170,7 +172,7 @@ def register_admin_management_handler(app: Client):
                     )
                     return
 
-        if target_user_id in Config.ADMIN_IDS:
+        if await is_owner(target_user_id):
             await message.reply_text(
                 "⚠️ این کاربر مالک ربات است و قبلاً ادمین است.",
                 reply_markup=ADMIN_MANAGEMENT_KEYBOARD,
@@ -240,7 +242,7 @@ def register_admin_management_handler(app: Client):
         actor_id = callback_query.from_user.id
         target_user_id = int(callback_query.data.split(":", 1)[1])
 
-        if target_user_id in Config.ADMIN_IDS:
+        if await is_owner(target_user_id):
             await callback_query.answer(
                 "❌ مالک ربات قابل حذف نیست.",
                 show_alert=True,

@@ -39,7 +39,7 @@ class SponsorChannel(models.Model):
 
 # ============================================================
 # Admins — added at runtime via the panel.
-# Owners from .env (ADMIN_IDS) are always admins and
+# Owners from .env (OWNER_IDS) are always admins and
 # are stored only there, never in this table.
 # ============================================================
 

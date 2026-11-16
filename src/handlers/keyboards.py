@@ -35,7 +35,7 @@ ADMIN_MAIN_KEYBOARD_LIMITED = ReplyKeyboardMarkup(
 def _is_owner(user_id: int) -> bool:
     """بررسی مالک بودن از .env؛ قبل از validate هم امن است."""
 
-    ids = Config.ADMIN_IDS
+    ids = Config.OWNER_IDS
 
     if isinstance(ids, (list, tuple, set)):
         return user_id in ids

@@ -8,7 +8,7 @@
 
 import logging
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pyrogram import filters
 
@@ -22,12 +22,18 @@ logger = logging.getLogger(__name__)
 def get_owner_ids() -> set[int]:
     """مالک‌های اصلی از .env؛ قبل از validate هم امن است."""
 
-    ids = Config.ADMIN_IDS
+    ids = Config.OWNER_IDS
 
     if isinstance(ids, (list, tuple, set)):
         return set(ids)
 
     return set()
+
+
+async def is_owner(user_id: int) -> bool:
+    """بررسی مالک بودن ربات (فقط .env)."""
+
+    return user_id in get_owner_ids()
 
 
 async def get_admin_ids() -> set[int]:
@@ -112,7 +118,7 @@ async def remove_admin(
 ):
     """
     حذف نرم ادمین (removed_at ثبت می‌شود) + ثبت در لاگ.
-    مالک‌های .env جدول ندارند و قابل حذف نیستند → None برمی‌گردد.
+    مالک‌های .env جدول ندارند و قابل حذف نیستند → None برمی‌گردند.
     """
 
     if user_id in get_owner_ids():
@@ -123,7 +129,7 @@ async def remove_admin(
     if not admin:
         return None
 
-    admin.removed_at = datetime.now()
+    admin.removed_at = datetime.now(timezone.utc)
     admin.removed_by = actor_id
     await admin.save()
 
@@ -176,3 +182,16 @@ async def _admin_filter_func(_, __, update):
 
 
 admin_filter = filters.create(_admin_filter_func)
+
+
+async def _owner_filter_func(_, __, update):
+    # فیلتر پویا: در زمان اجرا ارزیابی می‌شود (بعد از validate)
+    user = getattr(update, "from_user", None)
+
+    if not user:
+        return False
+
+    return await is_owner(user.id)
+
+
+owner_filter = filters.create(_owner_filter_func)

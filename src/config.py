@@ -12,7 +12,7 @@ class Config:
     API_ID = os.getenv("API_ID")
     API_HASH = os.getenv("API_HASH")
     BOT_TOKEN = os.getenv("BOT_TOKEN")
-    ADMIN_IDS = os.getenv("ADMIN_IDS")
+    OWNER_IDS = os.getenv("OWNER_IDS")
     DB_CHANNEL_ID = os.getenv("DB_CHANNEL_ID")
 
     # Optional
@@ -28,7 +28,7 @@ class Config:
             "API_ID": Config.API_ID,
             "API_HASH": Config.API_HASH,
             "BOT_TOKEN": Config.BOT_TOKEN,
-            "ADMIN_IDS": Config.ADMIN_IDS,
+            "OWNER_IDS": Config.OWNER_IDS,
             "DB_CHANNEL_ID": Config.DB_CHANNEL_ID,
         }
 
@@ -72,10 +72,10 @@ class Config:
         try:
             Config.API_ID = int(Config.API_ID)
 
-            Config.ADMIN_IDS = [
-                int(admin_id.strip())
-                for admin_id in Config.ADMIN_IDS.split(",")
-                if admin_id.strip()
+            Config.OWNER_IDS = [
+                int(owner_id.strip())
+                for owner_id in Config.OWNER_IDS.split(",")
+                if owner_id.strip()
             ]
 
             Config.DB_CHANNEL_ID = int(Config.DB_CHANNEL_ID)
@@ -83,7 +83,7 @@ class Config:
         except ValueError:
             print("❌ Configuration Error!")
             print(
-                "API_ID, ADMIN_IDS and DB_CHANNEL_ID "
+                "API_ID, OWNER_IDS and DB_CHANNEL_ID "
                 "must contain valid integers."
             )
             raise
