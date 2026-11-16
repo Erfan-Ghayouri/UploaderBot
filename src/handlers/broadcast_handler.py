@@ -8,7 +8,7 @@ from pyrogram.types import Message
 from config import Config
 from database.models import User
 from handlers.keyboards import (
-    ADMIN_MAIN_KEYBOARD,
+    main_keyboard_for,
     CANCEL_OPERATION_KEYBOARD,
     RESERVED_BUTTONS,
 )
@@ -84,7 +84,7 @@ def register_broadcast_handler(app: Client):
         if not users:
             await message.reply_text(
                 "❌ هنوز هیچ کاربری ثبت نشده است.",
-                reply_markup=ADMIN_MAIN_KEYBOARD,
+                reply_markup=main_keyboard_for(admin_id),
             )
             return
 
@@ -153,7 +153,7 @@ def register_broadcast_handler(app: Client):
         # بازگرداندن کیبورد پنل ادمین
         await message.reply_text(
             "🏠 به پنل مدیریت برگشتی.",
-            reply_markup=ADMIN_MAIN_KEYBOARD,
+            reply_markup=main_keyboard_for(admin_id),
         )
 
     logger.info("Broadcast handler registered successfully.")

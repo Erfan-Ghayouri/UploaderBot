@@ -3,12 +3,11 @@ import logging
 from pyrogram import Client, filters
 from pyrogram.types import Message
 
-from config import Config
 from database.models import ViewReactionChannel
 from handlers.keyboards import (
-    ADMIN_MAIN_KEYBOARD,
     CHANNEL_MENU_KEYBOARD,
     VIEW_REACTION_MENU_KEYBOARD,
+    main_keyboard_for,
 )
 from handlers.state import broadcast_states, channel_states
 from utils.admins import admin_filter
@@ -45,7 +44,7 @@ def register_admin_handler(app: Client):
         await message.reply_text(
             "سلام ادمین عزیز 👋\n"
             "به پنل مدیریت خوش اومدی.",
-            reply_markup=ADMIN_MAIN_KEYBOARD,
+            reply_markup=main_keyboard_for(message.from_user.id),
         )
 
     # --------------------------------------------------------
@@ -114,7 +113,7 @@ def register_admin_handler(app: Client):
 
         await message.reply_text(
             "عملیات لغو شد.",
-            reply_markup=ADMIN_MAIN_KEYBOARD,
+            reply_markup=main_keyboard_for(admin_id),
         )
 
     @app.on_message(
@@ -130,7 +129,7 @@ def register_admin_handler(app: Client):
 
         await message.reply_text(
             "🏠 پنل اصلی مدیریت",
-            reply_markup=ADMIN_MAIN_KEYBOARD,
+            reply_markup=main_keyboard_for(admin_id),
         )
 
     logger.info("Admin handler registered successfully.")

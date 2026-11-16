@@ -8,21 +8,30 @@ from pyrogram.types import (
 )
 
 from config import Config
-from database.database import DBChannel
-from database.models import Admin as AdminModel
+from handlers.helpers import get_forwarded_channel, get_forwarded_user
 from handlers.keyboards import (
-    ADMIN_MAIN_KEYBOARD,
     ADMIN_MANAGEMENT_KEYBOARD,
     CANCEL_OPERATION_KEYBOARD,
 )
-from handlers.state import admin_management_states, admin_filter
+from handlers.state import admin_management_states
+from utils.admins import (
+    add_admin,
+    get_active_admin,
+    get_active_admins,
+    get_admin_logs,
+    remove_admin,
+    resolve_admin_name,
+)
 
 
 logger = logging.getLogger(__name__)
 
+# کل مدیریت ادمین‌ها فقط برای مالک‌های .env است؛
+# ادمین‌های اضافه‌شده به این منو دسترسی ندارند.
+owner_filter = filters.user(Config.ADMIN_IDS)
+
 
 def register_admin_management_handler(app: Client):
-    admin_filter_dyn = admin_filter()
 
     # --------------------------------------------------------
     # ورود به منوی مدیریت ادمین‌ها
@@ -30,7 +39,7 @@ def register_admin_management_handler(app: Client):
 
     @app.on_message(
         filters.private
-        & admin_filter_dyn
+        & owner_filter
         & filters.regex(r"^👥 مدیریت ادمین‌ها$")
     )
     async def open_admin_management(client, message: Message):
@@ -48,31 +57,31 @@ def register_admin_management_handler(app: Client):
 
     @app.on_message(
         filters.private
-        & admin_filter_dyn
+        & owner_filter
         & filters.regex(r"^📋 لیست ادمین‌ها$")
     )
     async def list_admins(client, message: Message):
         admin_management_states.pop(message.from_user.id, None)
-
-        db = DBChannel.__new__(DBChannel)
 
         lines = ["👥 لیست ادمین‌ها:\n"]
 
         # مالک‌های .env
         lines.append("👑 مالکان ربات (.env):")
         for owner_id in Config.ADMIN_IDS:
-            name = await db.resolve_admin_name(client, owner_id)
+            name = await resolve_admin_name(client, owner_id)
             lines.append(f"• {owner_id} — {name}")
 
         # ادمین‌های دیتابیس
-        active_admins = await db.get_active_admins()
+        active_admins = await get_active_admins()
 
         if active_admins:
             lines.append("\n🛡 ادمین‌های فعال (دیتابیس):")
             for admin in active_admins:
-                added_by_name = await db.resolve_admin_name(
-                    client, admin.added_by
-                ) if admin.added_by else "—"
+                added_by_name = (
+                    await resolve_admin_name(client, admin.added_by)
+                    if admin.added_by
+                    else "—"
+                )
                 lines.append(
                     f"• {admin.user_id} — {admin.name or 'بدون نام'}"
                     f"\n  اضافه‌شده توسط: {added_by_name}"
@@ -88,7 +97,7 @@ def register_admin_management_handler(app: Client):
 
     @app.on_message(
         filters.private
-        & admin_filter_dyn
+        & owner_filter
         & filters.regex(r"^➕ افزودن ادمین$")
     )
     async def start_add_admin(client, message: Message):
@@ -107,16 +116,18 @@ def register_admin_management_handler(app: Client):
     # دریافت آیدی برای افزودن ادمین
     # --------------------------------------------------------
 
+    async def _add_pending_filter(_, __, m: Message):
+        if not m.from_user:
+            return False
+
+        state = admin_management_states.get(m.from_user.id)
+
+        return bool(state and state.get("kind") == "add")
+
     @app.on_message(
         filters.private
-        & admin_filter_dyn
-        & filters.create(
-            lambda _, __, m: bool(
-                m.from_user
-                and admin_management_states.get(m.from_user.id, {}).get("kind")
-                == "add"
-            )
-        ),
+        & owner_filter
+        & filters.create(_add_pending_filter),
         group=-2,
     )
     async def receive_add_admin_id(client, message: Message):
@@ -130,25 +141,34 @@ def register_admin_management_handler(app: Client):
         target_user_id = None
         target_name = None
 
-        if message.forward_from:
-            target_user_id = message.forward_from.id
+        sender_user = get_forwarded_user(message)
+
+        if sender_user:
+            # فوروارد از یک کاربر
+            target_user_id = sender_user.id
             target_name = (
-                (message.forward_from.first_name or "")
+                (sender_user.first_name or "")
                 + " "
-                + (message.forward_from.last_name or "")
+                + (sender_user.last_name or "")
             ).strip() or None
-        elif message.forward_from_chat:
-            target_user_id = message.forward_from_chat.id
-            target_name = message.forward_from_chat.title or None
         else:
-            text = (message.text or "").strip()
-            if text.lstrip("-").isdigit():
-                target_user_id = int(text)
+            forwarded_chat = get_forwarded_channel(message)
+
+            if forwarded_chat:
+                # فوروارد از یک کانال/گروه
+                target_user_id = forwarded_chat.id
+                target_name = forwarded_chat.title or None
             else:
-                await message.reply_text(
-                    "❌ لطفاً یک آیدی عددی بفرست یا پیام کاربر را Forward کن."
-                )
-                return
+                text = (message.text or "").strip()
+
+                if text.lstrip("-").isdigit():
+                    target_user_id = int(text)
+                else:
+                    await message.reply_text(
+                        "❌ لطفاً یک آیدی عددی بفرست "
+                        "یا پیام کاربر را Forward کن."
+                    )
+                    return
 
         if target_user_id in Config.ADMIN_IDS:
             await message.reply_text(
@@ -158,17 +178,16 @@ def register_admin_management_handler(app: Client):
             admin_management_states.pop(admin_id, None)
             return
 
-        db = DBChannel.__new__(DBChannel)
-        await db.add_admin(target_user_id, admin_id, target_name)
+        await add_admin(target_user_id, admin_id, target_name)
 
         admin_management_states.pop(admin_id, None)
 
-        name = await db.resolve_admin_name(client, target_user_id)
+        name = await resolve_admin_name(client, target_user_id)
 
         await message.reply_text(
             f"✅ کاربر به‌عنوان ادمین اضافه شد.\n\n"
             f"آیدی: {target_user_id}\n"
-            f"نام: {name or '—'}",
+            f"نام: {name or target_name or '—'}",
             reply_markup=ADMIN_MANAGEMENT_KEYBOARD,
         )
 
@@ -178,14 +197,11 @@ def register_admin_management_handler(app: Client):
 
     @app.on_message(
         filters.private
-        & admin_filter_dyn
+        & owner_filter
         & filters.regex(r"^🗑 حذف ادمین$")
     )
     async def start_remove_admin(client, message: Message):
-        admin_id = message.from_user.id
-
-        db = DBChannel.__new__(DBChannel)
-        active_admins = await db.get_active_admins()
+        active_admins = await get_active_admins()
 
         if not active_admins:
             await message.reply_text(
@@ -196,16 +212,15 @@ def register_admin_management_handler(app: Client):
             return
 
         # نمایش لیست دکمه‌های inline برای حذف
-        rows = []
-        for admin in active_admins:
-            rows.append(
-                [
-                    InlineKeyboardButton(
-                        f"🗑 حذف {admin.name or admin.user_id}",
-                        callback_data=f"removeadmin:{admin.user_id}",
-                    )
-                ]
-            )
+        rows = [
+            [
+                InlineKeyboardButton(
+                    f"🗑 حذف {admin.name or admin.user_id}",
+                    callback_data=f"removeadmin:{admin.user_id}",
+                )
+            ]
+            for admin in active_admins
+        ]
 
         await message.reply_text(
             "🗑 حذف ادمین\n\n"
@@ -219,10 +234,10 @@ def register_admin_management_handler(app: Client):
 
     @app.on_callback_query(
         filters.regex(r"^removeadmin:-?\d+$")
-        & admin_filter_dyn
+        & owner_filter
     )
     async def confirm_remove_admin(client, callback_query):
-        admin_id = callback_query.from_user.id
+        actor_id = callback_query.from_user.id
         target_user_id = int(callback_query.data.split(":", 1)[1])
 
         if target_user_id in Config.ADMIN_IDS:
@@ -232,11 +247,7 @@ def register_admin_management_handler(app: Client):
             )
             return
 
-        db = DBChannel.__new__(DBChannel)
-        admin_obj = await AdminModel.get_or_none(
-            user_id=target_user_id,
-            removed_at__is_null=True,
-        )
+        admin_obj = await get_active_admin(target_user_id)
 
         if not admin_obj:
             await callback_query.answer(
@@ -245,10 +256,12 @@ def register_admin_management_handler(app: Client):
             )
             return
 
-        actor_name = await db.resolve_admin_name(client, admin_id)
-        await db.remove_admin(target_user_id, admin_id, admin_obj.name)
+        await remove_admin(target_user_id, actor_id, admin_obj.name)
 
-        await callback_query.answer("✅ ادمین حذف شد.", show_alert=True)
+        await callback_query.answer(
+            "✅ ادمین حذف شد.",
+            show_alert=True,
+        )
 
         try:
             await callback_query.message.edit_text(
@@ -263,14 +276,13 @@ def register_admin_management_handler(app: Client):
 
     @app.on_message(
         filters.private
-        & admin_filter_dyn
+        & owner_filter
         & filters.regex(r"^📜 تاریخچه تغییرات$")
     )
     async def show_admin_history(client, message: Message):
         admin_management_states.pop(message.from_user.id, None)
 
-        db = DBChannel.__new__(DBChannel)
-        logs = await db.get_admin_logs(limit=30)
+        logs = await get_admin_logs(limit=30)
 
         if not logs:
             await message.reply_text(
@@ -282,7 +294,7 @@ def register_admin_management_handler(app: Client):
         lines = ["📜 تاریخچه تغییرات ادمین‌ها:\n"]
 
         for log in logs:
-            actor_name = log.actor_name or await db.resolve_admin_name(
+            actor_name = log.actor_name or await resolve_admin_name(
                 client, log.actor_user_id
             )
             target_name = log.target_name or str(log.target_user_id)
@@ -295,6 +307,9 @@ def register_admin_management_handler(app: Client):
                 f"\n  زمان: {log.created_at.strftime('%Y/%m/%d %H:%M')}"
             )
 
-        await message.reply_text("\n".join(lines), reply_markup=ADMIN_MANAGEMENT_KEYBOARD)
+        await message.reply_text(
+            "\n".join(lines),
+            reply_markup=ADMIN_MANAGEMENT_KEYBOARD,
+        )
 
     logger.info("Admin management handler registered successfully.")

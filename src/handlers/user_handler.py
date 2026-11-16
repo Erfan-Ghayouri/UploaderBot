@@ -10,10 +10,10 @@ from pyrogram.types import (
     Message,
 )
 
-from config import Config
 from database.models import User, ViewReactionChannel
 from handlers.helpers import delete_messages_after
 from handlers.state import view_gate_sessions
+from utils.admins import admin_filter, is_admin
 from utils.base62 import decode_base62
 from utils.subscription import (
     get_unjoined_channels,
@@ -129,7 +129,7 @@ async def send_manifest_files(
         # بررسی شرط کانال ریاکشن
         if (
             view_gate_enabled
-            and chat_id not in Config.ADMIN_IDS
+            and not await is_admin(chat_id)
             and not skip_gate
         ):
             gated = await maybe_require_view_reaction(
@@ -274,7 +274,7 @@ def register_user_handler(app: Client):
     @app.on_message(
         filters.private
         & filters.command("start")
-        & ~filters.user(Config.ADMIN_IDS)
+        & ~admin_filter
     )
     @require_subscription
     async def user_start(client, message: Message):

@@ -10,8 +10,8 @@ from pyrogram.types import (
 )
 from pyrogram.errors import RPCError, UserNotParticipant
 
-from config import Config
 from database.models import SponsorChannel
+from utils.admins import is_admin
 
 
 logger = logging.getLogger(__name__)
@@ -105,10 +105,10 @@ def require_subscription(handler):
         **kwargs
     ):
 
-        # Admins do not need to join sponsor channels
+        # Admins (owners + dynamic) do not need to join sponsor channels
         if (
             message.from_user
-            and message.from_user.id in Config.ADMIN_IDS
+            and await is_admin(message.from_user.id)
         ):
             return await handler(
                 client, message, *args, **kwargs

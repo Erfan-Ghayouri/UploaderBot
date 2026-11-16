@@ -11,7 +11,7 @@ from pyrogram.types import (
 from config import Config
 from database.models import ViewReactionChannel
 from handlers.keyboards import (
-    ADMIN_MAIN_KEYBOARD,
+    main_keyboard_for,
     upload_keyboard,
 )
 from handlers.helpers import delete_messages_after
@@ -91,7 +91,7 @@ def register_upload_handler(app: Client):
         if admin_id not in upload_sessions:
             await message.reply_text(
                 "❌ ابتدا آپلود را شروع کن.",
-                reply_markup=ADMIN_MAIN_KEYBOARD,
+                reply_markup=main_keyboard_for(admin_id),
             )
             return
 
@@ -195,7 +195,7 @@ def register_upload_handler(app: Client):
         if file_ids is None:
             await message.reply_text(
                 "❌ ابتدا آپلود را شروع کن.",
-                reply_markup=ADMIN_MAIN_KEYBOARD,
+                reply_markup=main_keyboard_for(admin_id),
             )
             return
 
@@ -269,7 +269,7 @@ def register_upload_handler(app: Client):
             # پیام دوم: بازگرداندن کیبورد اصلی ادمین
             await message.reply_text(
                 "🏠 به پنل مدیریت برگشتی.",
-                reply_markup=ADMIN_MAIN_KEYBOARD,
+                reply_markup=main_keyboard_for(admin_id),
             )
 
         except Exception:
@@ -303,7 +303,7 @@ def register_upload_handler(app: Client):
             "❌ آپلود لغو شد.\n"
             "فایل‌هایی که قبلاً در کانال دیتابیس ذخیره شده‌اند "
             "حذف نمی‌شوند.",
-            reply_markup=ADMIN_MAIN_KEYBOARD,
+            reply_markup=main_keyboard_for(admin_id),
         )
 
     logger.info("Upload handler registered successfully.")

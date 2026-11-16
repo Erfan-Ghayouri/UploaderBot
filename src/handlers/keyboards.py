@@ -1,3 +1,4 @@
+from config import Config
 from pyrogram.types import (
     KeyboardButton,
     ReplyKeyboardMarkup,
@@ -8,7 +9,7 @@ from pyrogram.types import (
 # کیبوردهای ادمین
 # ============================================================
 
-ADMIN_MAIN_KEYBOARD = ReplyKeyboardMarkup(
+ADMIN_MAIN_KEYBOARD_OWNER = ReplyKeyboardMarkup(
     [
         [KeyboardButton("📤 آپلود فایل")],
         [KeyboardButton("🔒 مدیریت کانال‌های قفل‌شده")],
@@ -18,6 +19,40 @@ ADMIN_MAIN_KEYBOARD = ReplyKeyboardMarkup(
     ],
     resize_keyboard=True,
 )
+
+# برای ادمین‌های اضافه‌شده (غیرمالک): دکمه مدیریت ادمین‌ها نمایش داده نمی‌شود
+ADMIN_MAIN_KEYBOARD_LIMITED = ReplyKeyboardMarkup(
+    [
+        [KeyboardButton("📤 آپلود فایل")],
+        [KeyboardButton("🔒 مدیریت کانال‌های قفل‌شده")],
+        [KeyboardButton("👁️ مدیریت شرط سین/ری‌اکشن")],
+        [KeyboardButton("📣 پیام همگانی")],
+    ],
+    resize_keyboard=True,
+)
+
+
+def _is_owner(user_id: int) -> bool:
+    """بررسی مالک بودن از .env؛ قبل از validate هم امن است."""
+
+    ids = Config.ADMIN_IDS
+
+    if isinstance(ids, (list, tuple, set)):
+        return user_id in ids
+
+    return False
+
+
+def main_keyboard_for(user_id: int) -> ReplyKeyboardMarkup:
+    """
+    کیبورد پنل اصلی متناسب با کاربر:
+    مالک .env دکمه مدیریت ادمین‌ها را می‌بیند؛ ادمین اضافه‌شده نه.
+    """
+
+    if _is_owner(user_id):
+        return ADMIN_MAIN_KEYBOARD_OWNER
+
+    return ADMIN_MAIN_KEYBOARD_LIMITED
 
 CHANNEL_MENU_KEYBOARD = ReplyKeyboardMarkup(
     [

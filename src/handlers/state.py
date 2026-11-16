@@ -5,6 +5,8 @@
 from pyrogram import filters
 from pyrogram.types import Message
 
+from utils.admins import admin_filter
+
 
 # فایل‌های آپلود در جریان هر ادمین: {admin_id: [file_message_id, ...]}
 upload_sessions: dict[int, list[int]] = {}
@@ -41,22 +43,3 @@ def make_state_filter(kind: str, step: str):
         )
 
     return filters.create(state_filter)
-
-
-def admin_filter():
-    """
-    فیلتر پویا برای ادمین‌ها: مالک‌های .env (ADMIN_IDS) همیشه ادمین هستند
-    و ادمین‌های ذخیره‌شده در دیتابیس (حذف‌نشده) هم مجازند.
-    """
-
-    async def predicate(_, __, message: Message):
-        if not message.from_user:
-            return False
-
-        # Лени import برای جلوگیری از imported-cycle
-        from database.database import DBChannel
-
-        db = DBChannel.__new__(DBChannel)
-        return await db.is_admin(message.from_user.id)
-
-    return filters.create(predicate)

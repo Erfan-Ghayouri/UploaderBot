@@ -11,24 +11,37 @@ logger = logging.getLogger(__name__)
 
 def get_forwarded_channel(message: Message):
     """
-    استخراج کانالی که پیام از آن فوروارد شده است.
-    هم فرمت جدید Pyrogram و هم فرمت قدیمی را پشتیبانی می‌کند.
+    استخراج چت مبدأ فوروارد از طریق forward_origin
+    (فرمت جدید Pyrogram/Kurigram).
     """
 
-    forward_origin = getattr(message, "forward_origin", None)
+    origin = getattr(message, "forward_origin", None)
 
-    if forward_origin:
-        channel = getattr(forward_origin, "chat", None)
+    if not origin:
+        return None
 
-        if channel:
-            return channel
+    # فوروارد از کانال: MessageOriginChannel.chat
+    channel = getattr(origin, "chat", None)
 
-    old_forward = getattr(message, "forward_from_chat", None)
+    if channel:
+        return channel
 
-    if old_forward:
-        return old_forward
+    # فوروارد از گروه/چت: MessageOriginChat.sender_chat
+    return getattr(origin, "sender_chat", None)
 
-    return None
+
+def get_forwarded_user(message: Message):
+    """
+    استخراج کاربر مبدأ فوروارد (MessageOriginUser.sender_user).
+    برای فوروارد کاربر بدون نام مخفی کار می‌کند؛ در غیر این صورت None.
+    """
+
+    origin = getattr(message, "forward_origin", None)
+
+    if not origin:
+        return None
+
+    return getattr(origin, "sender_user", None)
 
 
 def is_valid_telegram_link(link: str) -> bool:
